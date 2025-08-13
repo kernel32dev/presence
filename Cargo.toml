@@ -1,0 +1,16 @@
+[package]
+name = "presence"
+version = "0.0.0"
+edition = "2024"
+
+[features]
+sqlx = ["dep:sqlx"]
+
+[dependencies]
+presence-macros = { path = "macros" }
+serde = "1"
+sqlx = { version = "0.8", default-features = false, features = ["postgres"], optional = true }
+
+[dev-dependencies]
+serde_json = { version = "1" }
+serde_derive = { version = "1" }
