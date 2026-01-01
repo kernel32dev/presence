@@ -44,6 +44,75 @@ impl<T> Presence<T> {
         }
     }
 }
+
+impl<T> Presence<Option<T>> {
+    #[inline]
+    pub fn as_flat_opt(&self) -> Option<&T> {
+        match self {
+            Present(Some(inner)) => Some(inner),
+            Present(None) => None,
+            Absent => None,
+        }
+    }
+    #[inline]
+    pub fn into_flat_opt(self) -> Option<T> {
+        match self {
+            Present(Some(inner)) => Some(inner),
+            Present(None) => None,
+            Absent => None,
+        }
+    }
+    #[inline]
+    pub fn as_flat(&self) -> Presence<&T> {
+        match self {
+            Present(Some(inner)) => Present(inner),
+            Present(None) => Absent,
+            Absent => Absent,
+        }
+    }
+    #[inline]
+    pub fn flatten(self) -> Presence<T> {
+        match self {
+            Present(Some(inner)) => Present(inner),
+            Present(None) => Absent,
+            Absent => Absent,
+        }
+    }
+}
+impl<T> Presence<Presence<T>> {
+    #[inline]
+    pub fn as_flat_opt(&self) -> Option<&T> {
+        match self {
+            Present(Present(inner)) => Some(inner),
+            Present(Absent) => None,
+            Absent => None,
+        }
+    }
+    #[inline]
+    pub fn into_flat_opt(self) -> Option<T> {
+        match self {
+            Present(Present(inner)) => Some(inner),
+            Present(Absent) => None,
+            Absent => None,
+        }
+    }
+    #[inline]
+    pub fn as_flat(&self) -> Presence<&T> {
+        match self {
+            Present(Present(inner)) => Present(inner),
+            Present(Absent) => Absent,
+            Absent => Absent,
+        }
+    }
+    #[inline]
+    pub fn flatten(self) -> Presence<T> {
+        match self {
+            Present(inner) => inner,
+            Absent => Absent,
+        }
+    }
+}
+
 impl<T> From<Option<T>> for Presence<T> {
     fn from(value: Option<T>) -> Self {
         match value {
@@ -667,12 +736,3 @@ impl<A> DoubleEndedIterator for IntoIter<A> {
 }
 impl<A> ExactSizeIterator for IntoIter<A> {}
 impl<A> FusedIterator for IntoIter<A> {}
-impl<T> Presence<Presence<T>> {
-    #[inline]
-    pub fn flatten(self) -> Presence<T> {
-        match self {
-            Present(inner) => inner,
-            Absent => Absent,
-        }
-    }
-}

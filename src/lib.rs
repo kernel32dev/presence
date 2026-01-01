@@ -1,5 +1,6 @@
 pub mod debug;
 mod impls;
+pub mod salvo_oapi;
 pub mod serde;
 pub mod sqlx;
 mod tests;
@@ -31,7 +32,7 @@ pub enum Presence<T> {
     Absent,
 }
 
-pub use presence_macros::presence_aware;
+pub use presence_macros::*;
 
 /// adds the methods [`OptionPresenceEx::into_presence`], [`OptionPresenceEx::as_presence_ref`] and [`OptionPresenceEx::as_presence_mut`] to [`Option`]
 pub trait OptionPresenceEx {

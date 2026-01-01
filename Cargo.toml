@@ -5,11 +5,13 @@ edition = "2024"
 
 [features]
 sqlx = ["dep:sqlx"]
+salvo = ["dep:salvo-oapi", "presence-macros/salvo"]
 
 [dependencies]
 presence-macros = { path = "macros" }
 serde = "1"
 sqlx = { version = "0.8", default-features = false, features = ["postgres"], optional = true }
+salvo-oapi = { version = "*", default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = { version = "1" }

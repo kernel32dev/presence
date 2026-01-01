@@ -1,6 +1,9 @@
 [lib]
 proc-macro = true
 
+[features]
+salvo = []
+
 [package]
 name = "presence-macros"
 version = "0.0.0"

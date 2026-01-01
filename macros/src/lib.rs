@@ -1,6 +1,7 @@
 mod args;
 mod debug;
 pub(crate) mod generics;
+mod salvo;
 mod serde;
 
 use proc_macro::TokenStream;
@@ -17,7 +18,9 @@ use crate::args::Args;
 ///
 /// it will also override the implementation of the `serde::Serialize` derive macro (if present) to omit fields that are `Presence::Absent` and to not write the redudant `Present` to the output on fields that are `Presence::Present`
 ///
-/// finally, it will also override the implementation of the `serde::Deserialize` derive macro (if present) to represent omitted fields with `Presence::Absent` and fields that were specified with `Present`
+/// and, it will also override the implementation of the `serde::Deserialize` derive macro (if present) to represent omitted fields with `Presence::Absent` and fields that were specified with `Present`
+///
+/// finally, it will also override the implementation of the `serde_oapi::ToSchema` derive macro (if present and if the `salvo` feature is enabled) to emit `Presence` fields as not required, and `Option` fields as required (the default by salvo is for nullable fields also be ommitable, presence_aware overrides that)
 ///
 /// additionally you can override the path to the presence crate by usign this syntax: `#[presence_aware(crate = ::my_renamed_presence_import)]`, this is usefull if you rename the crate when depending on it
 #[proc_macro_attribute]
@@ -27,7 +30,7 @@ pub fn presence_aware(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let impls = match &mut item {
         Item::Struct(item_struct) => {
-            let (derive_debug, derive_serialize, derive_deserialize) =
+            let [derive_debug, derive_serialize, derive_deserialize, derive_to_schema] =
                 take_relevant_derives(&mut item_struct.attrs);
             [
                 derive_debug.map(|derive_debug| {
@@ -47,24 +50,48 @@ pub fn presence_aware(args: TokenStream, input: TokenStream) -> TokenStream {
                         item_struct,
                     )
                 }),
+                derive_to_schema.map(|derive_to_schema| {
+                    #[cfg(not(feature = "salvo"))]
+                    return unreachable!(
+                        "derive_to_schema should never be Some if the salvo feature is not enabled"
+                    );
+                    #[cfg(feature = "salvo")]
+                    return salvo::derive_struct_presence_aware_to_schema(
+                        &args,
+                        derive_to_schema,
+                        item_struct,
+                    );
+                }),
             ]
         }
         Item::Enum(item_enum) => {
-            let (derive_debug, derive_serialize, derive_deserialize) =
+            let [derive_debug, derive_serialize, derive_deserialize, derive_to_schema] =
                 take_relevant_derives(&mut item_enum.attrs);
             [
                 derive_debug.map(|derive_debug| {
-                    debug::impl_enum_debug_presence(&args, derive_debug, &item_enum)
+                    debug::impl_enum_debug_presence(&args, derive_debug, item_enum)
                 }),
                 derive_serialize.map(|derive_serialize| {
-                    serde::derive_enum_presence_aware_serialize(&args, derive_serialize, &item_enum)
+                    serde::derive_enum_presence_aware_serialize(&args, derive_serialize, item_enum)
                 }),
                 derive_deserialize.map(|derive_deserialize| {
                     serde::derive_enum_presence_aware_deserialize(
                         &args,
                         derive_deserialize,
-                        &item_enum,
+                        item_enum,
                     )
+                }),
+                derive_to_schema.map(|derive_to_schema| {
+                    #[cfg(not(feature = "salvo"))]
+                    return unreachable!(
+                        "derive_to_schema should never be Some if the salvo feature is not enabled"
+                    );
+                    #[cfg(feature = "salvo")]
+                    return salvo::derive_enum_presence_aware_to_schema(
+                        &args,
+                        derive_to_schema,
+                        item_enum,
+                    );
                 }),
             ]
         }
@@ -104,15 +131,20 @@ pub fn presence_aware(args: TokenStream, input: TokenStream) -> TokenStream {
     quote!(#item #(#impls)*).into()
 }
 
+/// the purpose of this derive macro is to allow structs to have serde attributes without having to derive serde on them
+///
+/// rust not allow attributes on a struct that are not used by any derives, so we have this noop derive to use them
+#[cfg(feature = "salvo")]
+#[proc_macro_derive(_consume_serde_attrs, attributes(serde))]
+pub fn _consume_serde_attrs(_: TokenStream) -> TokenStream {
+    TokenStream::new()
+}
+
 /// ```ignore
-/// (derive_debug, derive_serialize, derive_deserialize)
+/// (derive_debug, derive_serialize, derive_deserialize, #[cfg(feature = "salvo")] derive_to_schema)
 /// ```
-fn take_relevant_derives(
-    attrs: &mut Vec<syn::Attribute>,
-) -> (Option<syn::Path>, Option<syn::Path>, Option<syn::Path>) {
-    let mut derive_debug = None;
-    let mut derive_serialize = None;
-    let mut derive_deserialize = None;
+fn take_relevant_derives(attrs: &mut Vec<syn::Attribute>) -> [Option<syn::Path>; 4] {
+    let mut derives = [const { None }; 4];
     for attr in attrs {
         let syn::Meta::List(meta_list) = &mut attr.meta else {
             continue;
@@ -132,28 +164,23 @@ fn take_relevant_derives(
                         .last()
                         .map(|x| x.ident.to_string())
                         .unwrap_or_default();
-                    match last.as_str() {
-                        "Debug" if derive_debug.is_none() => {
-                            derive_debug = Some(path);
-                            None
-                        }
-                        "Serialize" if derive_serialize.is_none() => {
-                            derive_serialize = Some(path);
-                            None
-                        }
-                        "Deserialize" if derive_deserialize.is_none() => {
-                            derive_deserialize = Some(path);
-                            None
-                        }
-                        _ => Some(path),
-                    }
+                    let index = match last.as_str() {
+                        "Debug" => 0,
+                        "Serialize" => 1,
+                        "Deserialize" => 2,
+                        #[cfg(feature = "salvo")]
+                        "ToSchema" => 3,
+                        _ => return Some(path),
+                    };
+                    derives[index].get_or_insert(path);
+                    None
                 })
                 .collect(),
         );
 
         meta_list.tokens = quote!(#paths);
     }
-    return (derive_debug, derive_serialize, derive_deserialize);
+    return derives;
 
     struct PathList(syn::punctuated::Punctuated<syn::Path, syn::token::Comma>);
 

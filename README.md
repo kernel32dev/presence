@@ -29,6 +29,8 @@ Standard derives like `Debug`, `serde::Serialize`, and `serde::Deserialize` cann
 
 To enable these traits, the library provides the `#[presence_aware]` attribute macro. This macro must be applied to any struct or enum definition containing `Presence<T>` fields to ensure correct behavior.
 
+The `salvo_oapi::ToSchema` derive is also compatible, but must be enabled with the `salvo` feature.
+
 ### Example
 
 The following example defines a `UserPatch` struct for a partial update. The `email` field can be updated, set to `null`, or left unmodified.
