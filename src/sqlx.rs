@@ -13,8 +13,8 @@ pub trait PresenceAwareFromSqlxSequenceItem: Sized {
         decoder: &mut sqlx::postgres::types::PgRecordDecoder<'_>,
     ) -> Result<Self, sqlx::error::BoxDynError>;
 }
-impl<T: for<'a> sqlx::Decode<'a, sqlx::Postgres> + sqlx::Type<sqlx::Postgres>> PresenceAwareFromSqlxSequenceItem
-    for T
+impl<T: for<'a> sqlx::Decode<'a, sqlx::Postgres> + sqlx::Type<sqlx::Postgres>>
+    PresenceAwareFromSqlxSequenceItem for T
 {
     fn from_row_item(row: &sqlx::postgres::PgRow, index: &mut usize) -> Result<Self, sqlx::Error> {
         let value = sqlx::Row::try_get(row, *index)?;

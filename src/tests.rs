@@ -336,14 +336,15 @@ impl<'de, const N: usize> serde::Deserialize<'de> for ByteArray<N> {
                 }
             }
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-                where
-                    A: serde::de::SeqAccess<'de>, {
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
                 let mut buffer = [0; N];
                 for i in 0..N {
                     match seq.next_element::<u8>()? {
                         Some(byte) => {
                             buffer[i] = byte;
-                        },
+                        }
                         None => return Err(serde::de::Error::invalid_length(i, &self)),
                     }
                 }

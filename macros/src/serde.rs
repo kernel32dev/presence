@@ -77,7 +77,12 @@ pub fn derive_struct_presence_aware_serialize(
     let proxy_lifetime = Lifetime::new("'__serialization_proxy__", proc_macro2::Span::call_site());
 
     // then the container atributes
-    let mut proxy_serde_attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+    let mut proxy_serde_attrs = input
+        .attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("serde"))
+        .cloned()
+        .collect::<Vec<_>>();
 
     // the path to the serde crate for serde derive to use
     let proxy_serde_crate = match serde_config::remove(&mut proxy_serde_attrs, "crate") {
@@ -191,30 +196,36 @@ pub fn derive_struct_presence_aware_deserialize(
             })]);
 
         // prepare the deserialization bounds for each field
-        input.fields.iter().filter(|field| type_mentions_generics(&field.ty, &input.generics)).flat_map(|field| [
-            syn::WherePredicate::Type(syn::PredicateType {
-                lifetimes: None,
-                bounded_ty: syn::Type::Path(syn::TypePath {
-                    qself: None,
-                    // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
-                    // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
-                    // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
-                    path: presence_aware_deserialize(field.ty.clone()),
-                }),
-                colon_token: syn::Token![:](proc_macro2::Span::call_site()),
-                bounds: bounds_for_presence_aware_deserialize.clone(),
-            }),
-            syn::WherePredicate::Type(syn::PredicateType {
-                lifetimes: None,
-                // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
-                // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
-                // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
-                bounded_ty: field.ty.clone(),
-                colon_token: syn::Token![:](proc_macro2::Span::call_site()),
-                bounds: bounds_for_field.clone(),
-            }),
-        ])
-        .collect::<Vec<_>>()
+        input
+            .fields
+            .iter()
+            .filter(|field| type_mentions_generics(&field.ty, &input.generics))
+            .flat_map(|field| {
+                [
+                    syn::WherePredicate::Type(syn::PredicateType {
+                        lifetimes: None,
+                        bounded_ty: syn::Type::Path(syn::TypePath {
+                            qself: None,
+                            // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
+                            // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
+                            // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
+                            path: presence_aware_deserialize(field.ty.clone()),
+                        }),
+                        colon_token: syn::Token![:](proc_macro2::Span::call_site()),
+                        bounds: bounds_for_presence_aware_deserialize.clone(),
+                    }),
+                    syn::WherePredicate::Type(syn::PredicateType {
+                        lifetimes: None,
+                        // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
+                        // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
+                        // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
+                        bounded_ty: field.ty.clone(),
+                        colon_token: syn::Token![:](proc_macro2::Span::call_site()),
+                        bounds: bounds_for_field.clone(),
+                    }),
+                ]
+            })
+            .collect::<Vec<_>>()
     };
 
     // second we prepare the things needed by the impl
@@ -277,7 +288,12 @@ pub fn derive_struct_presence_aware_deserialize(
     let proxy_generics_where = input.generics.where_clause.as_ref();
 
     // then the container atributes
-    let mut proxy_serde_attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+    let mut proxy_serde_attrs = input
+        .attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("serde"))
+        .cloned()
+        .collect::<Vec<_>>();
 
     // the path to the serde crate for serde derive to use
     let proxy_serde_crate = match serde_config::remove(&mut proxy_serde_attrs, "crate") {
@@ -289,18 +305,20 @@ pub fn derive_struct_presence_aware_deserialize(
     let proxy_serde_bound = {
         let mut buffer = String::new();
         for bound in bounds {
-            std::fmt::Write::write_fmt(
-                &mut buffer,
-                format_args!("{},", bound.into_token_stream()),
-            )
-            .unwrap();
+            std::fmt::Write::write_fmt(&mut buffer, format_args!("{},", bound.into_token_stream()))
+                .unwrap();
         }
         buffer
     };
 
     // the fields of the proxy struct, with the #[serde(default)] attribute.
     let proxy_fields = input.fields.iter().map(|field| {
-        let mut attrs = field.attrs.iter().filter(|x| x.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+        let mut attrs = field
+            .attrs
+            .iter()
+            .filter(|x| x.path().is_ident("serde"))
+            .cloned()
+            .collect::<Vec<_>>();
         serde_config::remove(&mut attrs, "default");
         let name = &field.ident;
         let ty = presence_aware_deserialize(field.ty.clone());
@@ -435,7 +453,12 @@ pub fn derive_enum_presence_aware_serialize(
     let proxy_lifetime = Lifetime::new("'__serialization_proxy__", proc_macro2::Span::call_site());
 
     // then the container atributes
-    let mut proxy_serde_attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+    let mut proxy_serde_attrs = input
+        .attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("serde"))
+        .cloned()
+        .collect::<Vec<_>>();
 
     // the path to the serde crate for serde derive to use
     let proxy_serde_crate = match serde_config::remove(&mut proxy_serde_attrs, "crate") {
@@ -602,53 +625,55 @@ pub fn derive_enum_presence_aware_deserialize(
     let bounds = {
         // prepare the bounds that all #presence::serde::PresenceAwareDeserialize<{field_type}> must be to implement serialize
         let bounds_for_presence_aware_deserialize =
-            syn::punctuated::Punctuated::from_iter([syn::TypeParamBound::Trait(
-                syn::TraitBound {
-                    paren_token: None,
-                    modifier: syn::TraitBoundModifier::None,
-                    lifetimes: None,
-                    path: syn::parse_quote! { #presence::serde::Deserialize<#de> },
-                },
-            )]);
+            syn::punctuated::Punctuated::from_iter([syn::TypeParamBound::Trait(syn::TraitBound {
+                paren_token: None,
+                modifier: syn::TraitBoundModifier::None,
+                lifetimes: None,
+                path: syn::parse_quote! { #presence::serde::Deserialize<#de> },
+            })]);
         // prepare the bounds that all fields must be to implement serialize
         let bounds_for_field =
-            syn::punctuated::Punctuated::from_iter([syn::TypeParamBound::Trait(
-                syn::TraitBound {
-                    paren_token: None,
-                    modifier: syn::TraitBoundModifier::None,
-                    lifetimes: None,
-                    path: syn::parse_quote! { #presence::serde::PresenceAwareDeserializeEx<#de> },
-                },
-            )]);
+            syn::punctuated::Punctuated::from_iter([syn::TypeParamBound::Trait(syn::TraitBound {
+                paren_token: None,
+                modifier: syn::TraitBoundModifier::None,
+                lifetimes: None,
+                path: syn::parse_quote! { #presence::serde::PresenceAwareDeserializeEx<#de> },
+            })]);
 
         // prepare the deserialization bounds for each field in each variant
         input
             .variants
             .iter()
             .flat_map(|variant| {
-                variant.fields.iter().filter(|field| type_mentions_generics(&field.ty, &input.generics)).flat_map(|field| [
-                    syn::WherePredicate::Type(syn::PredicateType {
-                        lifetimes: None,
-                        bounded_ty: syn::Type::Path(syn::TypePath {
-                            qself: None,
-                            // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
-                            // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
-                            // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
-                            path: presence_aware_deserialize(field.ty.clone()),
-                        }),
-                        colon_token: syn::Token![:](proc_macro2::Span::call_site()),
-                        bounds: bounds_for_presence_aware_deserialize.clone(),
-                    }),
-                    syn::WherePredicate::Type(syn::PredicateType {
-                        lifetimes: None,
-                        // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
-                        // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
-                        // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
-                        bounded_ty: field.ty.clone(),
-                        colon_token: syn::Token![:](proc_macro2::Span::call_site()),
-                        bounds: bounds_for_field.clone(),
-                    }),
-                ])
+                variant
+                    .fields
+                    .iter()
+                    .filter(|field| type_mentions_generics(&field.ty, &input.generics))
+                    .flat_map(|field| {
+                        [
+                            syn::WherePredicate::Type(syn::PredicateType {
+                                lifetimes: None,
+                                bounded_ty: syn::Type::Path(syn::TypePath {
+                                    qself: None,
+                                    // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
+                                    // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
+                                    // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
+                                    path: presence_aware_deserialize(field.ty.clone()),
+                                }),
+                                colon_token: syn::Token![:](proc_macro2::Span::call_site()),
+                                bounds: bounds_for_presence_aware_deserialize.clone(),
+                            }),
+                            syn::WherePredicate::Type(syn::PredicateType {
+                                lifetimes: None,
+                                // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
+                                // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
+                                // as of currently this prevents structs with more than one lifetime from working with Debug, Serialize and Deserialize
+                                bounded_ty: field.ty.clone(),
+                                colon_token: syn::Token![:](proc_macro2::Span::call_site()),
+                                bounds: bounds_for_field.clone(),
+                            }),
+                        ]
+                    })
             })
             .collect::<Box<[_]>>()
     };
@@ -683,14 +708,15 @@ pub fn derive_enum_presence_aware_deserialize(
         let impl_generics_without_de = &input.generics;
 
         // clone and add the bounds needed for deserialization
-        let mut impl_where_clause = input
-            .generics
-            .where_clause
-            .clone()
-            .unwrap_or_else(|| syn::WhereClause {
-                where_token: Default::default(),
-                predicates: Default::default(),
-            });
+        let mut impl_where_clause =
+            input
+                .generics
+                .where_clause
+                .clone()
+                .unwrap_or_else(|| syn::WhereClause {
+                    where_token: Default::default(),
+                    predicates: Default::default(),
+                });
         impl_where_clause.predicates.extend(bounds.iter().cloned());
 
         (
@@ -712,7 +738,12 @@ pub fn derive_enum_presence_aware_deserialize(
     let proxy_generics_where = input.generics.where_clause.as_ref();
 
     // then the container atributes
-    let mut proxy_serde_attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+    let mut proxy_serde_attrs = input
+        .attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("serde"))
+        .cloned()
+        .collect::<Vec<_>>();
 
     // the path to the serde crate for serde derive to use
     let proxy_serde_crate = match serde_config::remove(&mut proxy_serde_attrs, "crate") {
@@ -724,11 +755,8 @@ pub fn derive_enum_presence_aware_deserialize(
     let proxy_serde_bound = {
         let mut buffer = String::new();
         for bound in bounds {
-            std::fmt::Write::write_fmt(
-                &mut buffer,
-                format_args!("{},", bound.into_token_stream()),
-            )
-            .unwrap();
+            std::fmt::Write::write_fmt(&mut buffer, format_args!("{},", bound.into_token_stream()))
+                .unwrap();
         }
         buffer
     };
@@ -736,9 +764,17 @@ pub fn derive_enum_presence_aware_deserialize(
     // the variants of the proxy enum, with the #[serde(default)] attribute on fields for struct-like variants.
     let proxy_variants = input.variants.iter().map(|variant| {
         let name = &variant.ident;
-        let attrs = variant.attrs.iter().filter(|attr| attr.path().is_ident("serde"));
+        let attrs = variant
+            .attrs
+            .iter()
+            .filter(|attr| attr.path().is_ident("serde"));
         let fields = variant.fields.iter().map(|field| {
-            let mut attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
+            let mut attrs = input
+                .attrs
+                .iter()
+                .filter(|attr| attr.path().is_ident("serde"))
+                .cloned()
+                .collect::<Vec<_>>();
             serde_config::remove(&mut attrs, "default");
 
             let field_name = &field.ident;
@@ -865,11 +901,11 @@ pub fn derive_enum_presence_aware_deserialize(
                 }
 
                 let proxy = <__DeserializationProxy__ #impl_ty_generics as #presence::serde::Deserialize<#de>>::deserialize(deserializer)?;
-                
+
                 let result = match proxy {
                     #(#proxy_variant_destructuring),*
                 };
-                
+
                 Ok(result)
             }
         }
@@ -879,12 +915,12 @@ pub fn derive_enum_presence_aware_deserialize(
 mod serde_config {
     use syn::ext::IdentExt;
 
-    pub(super) fn remove(attrs : &mut [syn::Attribute], key: &str) -> Option<Option<String>> {
+    pub(super) fn remove(attrs: &mut [syn::Attribute], key: &str) -> Option<Option<String>> {
         for attr in attrs {
             if !attr.path().is_ident("serde") {
                 continue;
             }
-            let syn::Meta::List(syn::MetaList { tokens, .. }) = &mut attr.meta  else {
+            let syn::Meta::List(syn::MetaList { tokens, .. }) = &mut attr.meta else {
                 continue;
             };
 
@@ -894,7 +930,14 @@ mod serde_config {
                 if config.key.to_string() == key {
                     let target = Some(config.value.as_ref().map(syn::LitStr::value));
                     let target_index = index;
-                    let configs = KeyValueList(configs.into_iter().enumerate().filter(|&(i, _)| i != target_index).map(|(_, v)| v).collect());
+                    let configs = KeyValueList(
+                        configs
+                            .into_iter()
+                            .enumerate()
+                            .filter(|&(i, _)| i != target_index)
+                            .map(|(_, v)| v)
+                            .collect(),
+                    );
                     *tokens = quote::quote! { #configs };
                     return target;
                 }
@@ -902,12 +945,12 @@ mod serde_config {
         }
         None
     }
-    pub(super) fn read(attrs : &[syn::Attribute], key: &str) -> Option<Option<String>> {
+    pub(super) fn read(attrs: &[syn::Attribute], key: &str) -> Option<Option<String>> {
         for attr in attrs {
             if !attr.path().is_ident("serde") {
                 continue;
             }
-            let syn::Meta::List(syn::MetaList { tokens, .. }) = &attr.meta  else {
+            let syn::Meta::List(syn::MetaList { tokens, .. }) = &attr.meta else {
                 continue;
             };
 
@@ -921,7 +964,7 @@ mod serde_config {
         }
         None
     }
-    pub(super) fn read_path(attrs : &[syn::Attribute], key: &str) -> Option<Option<syn::Path>> {
+    pub(super) fn read_path(attrs: &[syn::Attribute], key: &str) -> Option<Option<syn::Path>> {
         match read(attrs, key) {
             Some(Some(text)) => Some(Some(syn::parse_str(&text).unwrap())),
             Some(None) => Some(None),
@@ -962,7 +1005,10 @@ mod serde_config {
 
     impl syn::parse::Parse for KeyValueList {
         fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-            let entries = syn::punctuated::Punctuated::<KeyValue, syn::token::Comma>::parse_terminated(input)?;
+            let entries =
+                syn::punctuated::Punctuated::<KeyValue, syn::token::Comma>::parse_terminated(
+                    input,
+                )?;
             Ok(KeyValueList(entries))
         }
     }

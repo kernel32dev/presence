@@ -1,4 +1,3 @@
-
 use std::collections::HashSet;
 use syn::{GenericArgument, GenericParam, Generics, Ident, PathArguments, Type};
 
@@ -62,7 +61,9 @@ fn type_mentions_generics_recursive(ty: &Type, generic_params: &HashSet<&Ident>)
             // is a generic parameter identifier.
             if type_path.qself.is_none() && !type_path.path.segments.is_empty() {
                 let first_segment = type_path.path.segments.first().unwrap();
-                if first_segment.arguments.is_none() && generic_params.contains(&first_segment.ident) {
+                if first_segment.arguments.is_none()
+                    && generic_params.contains(&first_segment.ident)
+                {
                     return true;
                 }
             }
@@ -114,13 +115,16 @@ fn type_mentions_generics_recursive(ty: &Type, generic_params: &HashSet<&Ident>)
 
             input_mentions || output_mentions
         }
-        
+
         // For trait objects (`dyn Trait<T>`), check the types in the trait bounds.
         Type::TraitObject(ty) => ty.bounds.iter().any(|bound| {
             if let syn::TypeParamBound::Trait(trait_bound) = bound {
                 // A trait bound is essentially a path, so we can reuse path logic.
                 // We create a temporary Type::Path to recursively call our function.
-                let temp_type = Type::Path(syn::TypePath { qself: None, path: trait_bound.path.clone() });
+                let temp_type = Type::Path(syn::TypePath {
+                    qself: None,
+                    path: trait_bound.path.clone(),
+                });
                 return type_mentions_generics_recursive(&temp_type, generic_params);
             }
             false

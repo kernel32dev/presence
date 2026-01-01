@@ -12,7 +12,7 @@ pub struct Args {
 impl Parse for Args {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut crate_path = None;
-        
+
         if !input.is_empty() {
             for arg in input.parse_terminated(syn::Meta::parse, Token![,])? {
                 match arg {
@@ -27,10 +27,7 @@ impl Parse for Args {
                                 ));
                             }
                         } else {
-                            return Err(syn::Error::new_spanned(
-                                nv.path,
-                                "Unknown argument",
-                            ));
+                            return Err(syn::Error::new_spanned(nv.path, "Unknown argument"));
                         }
                     }
                     _ => {
@@ -43,6 +40,8 @@ impl Parse for Args {
             }
         }
 
-        Ok(Args { presence: crate_path.unwrap_or_else(|| syn::parse_quote! { ::presence }) })
+        Ok(Args {
+            presence: crate_path.unwrap_or_else(|| syn::parse_quote! { ::presence }),
+        })
     }
 }

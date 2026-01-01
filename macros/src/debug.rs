@@ -4,7 +4,11 @@ use syn::{Fields, FieldsNamed, FieldsUnnamed};
 
 use crate::{generics::type_mentions_generics, Args};
 
-pub fn impl_struct_debug_presence(args: &Args, derive_debug: syn::Path, item: &syn::ItemStruct) -> proc_macro2::TokenStream {
+pub fn impl_struct_debug_presence(
+    args: &Args,
+    derive_debug: syn::Path,
+    item: &syn::ItemStruct,
+) -> proc_macro2::TokenStream {
     let Args { presence } = args;
     let name = &item.ident;
     let name_str = name.to_string();
@@ -55,10 +59,21 @@ pub fn impl_struct_debug_presence(args: &Args, derive_debug: syn::Path, item: &s
         }
     };
 
-    add_constraints(args, derive_debug, &item.ident, &item.generics, &item.fields, fmt_fn)
+    add_constraints(
+        args,
+        derive_debug,
+        &item.ident,
+        &item.generics,
+        &item.fields,
+        fmt_fn,
+    )
 }
 
-pub fn impl_enum_debug_presence(args: &Args, derive_debug: syn::Path, item: &syn::ItemEnum) -> proc_macro2::TokenStream {
+pub fn impl_enum_debug_presence(
+    args: &Args,
+    derive_debug: syn::Path,
+    item: &syn::ItemEnum,
+) -> proc_macro2::TokenStream {
     let Args { presence } = args;
     let name = &item.ident;
     let match_arms = item.variants.iter().map(|variant| {
@@ -133,16 +148,23 @@ pub fn impl_enum_debug_presence(args: &Args, derive_debug: syn::Path, item: &syn
 
     let fields = item.variants.iter().flat_map(|x| &x.fields);
 
-    add_constraints(args, derive_debug, &item.ident, &item.generics, fields, fmt_fn)
+    add_constraints(
+        args,
+        derive_debug,
+        &item.ident,
+        &item.generics,
+        fields,
+        fmt_fn,
+    )
 }
 
 fn add_constraints<'a>(
-    args: &Args, 
+    args: &Args,
     derive_debug: syn::Path,
     name: &syn::Ident,
     generics: &syn::Generics,
     fields: impl IntoIterator<Item = &'a syn::Field>,
-    fmt_fn: proc_macro2::TokenStream
+    fmt_fn: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     let Args { presence } = args;
 
@@ -156,16 +178,17 @@ fn add_constraints<'a>(
         predicates: Default::default(),
     });
 
-    let bounds = syn::punctuated::Punctuated::from_iter([
-        syn::TypeParamBound::Trait(syn::parse_quote! { #presence::debug::PresenceAwareDebug })
-    ]);
-    
+    let bounds = syn::punctuated::Punctuated::from_iter([syn::TypeParamBound::Trait(
+        syn::parse_quote! { #presence::debug::PresenceAwareDebug },
+    )]);
+
     for field in fields {
         if !type_mentions_generics(&field.ty, generics) {
             continue;
         }
-        where_clause.predicates.push(syn::WherePredicate::Type(
-            syn::PredicateType {
+        where_clause
+            .predicates
+            .push(syn::WherePredicate::Type(syn::PredicateType {
                 lifetimes: None,
                 // TODO! there is a very strage E0283 error that happens when the same bound is places on two identical types that only differ in the lifetimes
                 // making them HOTB (with the for<'...> ...) syntax seems to resolve the issue and allow repeats, but does not seem to be a complete solution
@@ -173,8 +196,7 @@ fn add_constraints<'a>(
                 bounded_ty: field.ty.clone(),
                 colon_token: syn::Token![:](Span::call_site()),
                 bounds: bounds.clone(),
-            }
-        ));
+            }));
     }
 
     quote! {

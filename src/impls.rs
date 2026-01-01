@@ -26,14 +26,18 @@ impl<T> Presence<T> {
         }
     }
     pub fn as_opt_deref(&self) -> Option<&T::Target>
-    where T: Deref {
+    where
+        T: Deref,
+    {
         match self {
             Present(x) => Some(&**x),
             Absent => None,
         }
     }
     pub fn as_opt_deref_mut(&mut self) -> Option<&mut T::Target>
-    where T: DerefMut {
+    where
+        T: DerefMut,
+    {
         match self {
             Present(x) => Some(&mut **x),
             Absent => None,

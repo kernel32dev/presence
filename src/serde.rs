@@ -67,9 +67,7 @@ impl serde::Serialize for PresenceAwareSerialize<Undefined> {
     where
         S: serde::Serializer,
     {
-        Err(serde::ser::Error::custom(
-            "can't serialize Undefined",
-        ))
+        Err(serde::ser::Error::custom("can't serialize Undefined"))
     }
 }
 
@@ -131,9 +129,7 @@ impl<'de, T: serde::Deserialize<'de>> serde::Deserialize<'de>
     }
 }
 
-impl<'de> serde::Deserialize<'de>
-    for PresenceAwareDeserialize<Undefined>
-{
+impl<'de> serde::Deserialize<'de> for PresenceAwareDeserialize<Undefined> {
     fn deserialize<D>(_: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

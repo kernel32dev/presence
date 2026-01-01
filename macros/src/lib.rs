@@ -34,10 +34,18 @@ pub fn presence_aware(args: TokenStream, input: TokenStream) -> TokenStream {
                     debug::impl_struct_debug_presence(&args, derive_debug, &item_struct)
                 }),
                 derive_serialize.map(|derive_serialize| {
-                    serde::derive_struct_presence_aware_serialize(&args, derive_serialize, item_struct)
+                    serde::derive_struct_presence_aware_serialize(
+                        &args,
+                        derive_serialize,
+                        item_struct,
+                    )
                 }),
                 derive_deserialize.map(|derive_deserialize| {
-                    serde::derive_struct_presence_aware_deserialize(&args, derive_deserialize, item_struct)
+                    serde::derive_struct_presence_aware_deserialize(
+                        &args,
+                        derive_deserialize,
+                        item_struct,
+                    )
                 }),
             ]
         }
@@ -48,8 +56,16 @@ pub fn presence_aware(args: TokenStream, input: TokenStream) -> TokenStream {
                 derive_debug.map(|derive_debug| {
                     debug::impl_enum_debug_presence(&args, derive_debug, &item_enum)
                 }),
-                derive_serialize.map(|derive_serialize| serde::derive_enum_presence_aware_serialize(&args, derive_serialize, &item_enum)),
-                derive_deserialize.map(|derive_deserialize| serde::derive_enum_presence_aware_deserialize(&args, derive_deserialize, &item_enum)),
+                derive_serialize.map(|derive_serialize| {
+                    serde::derive_enum_presence_aware_serialize(&args, derive_serialize, &item_enum)
+                }),
+                derive_deserialize.map(|derive_deserialize| {
+                    serde::derive_enum_presence_aware_deserialize(
+                        &args,
+                        derive_deserialize,
+                        &item_enum,
+                    )
+                }),
             ]
         }
         _ => panic!("the presence_aware attribute can only be used on structs or enums"),
