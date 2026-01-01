@@ -300,7 +300,7 @@ pub fn derive_struct_presence_aware_deserialize(
 
     // the fields of the proxy struct, with the #[serde(default)] attribute.
     let proxy_fields = input.fields.iter().map(|field| {
-        let mut attrs = field.attrs.clone();
+        let mut attrs = field.attrs.iter().filter(|x| x.path().is_ident("serde")).cloned().collect::<Vec<_>>();
         serde_config::remove(&mut attrs, "default");
         let name = &field.ident;
         let ty = presence_aware_deserialize(field.ty.clone());
@@ -738,7 +738,7 @@ pub fn derive_enum_presence_aware_deserialize(
         let name = &variant.ident;
         let attrs = variant.attrs.iter().filter(|attr| attr.path().is_ident("serde"));
         let fields = variant.fields.iter().map(|field| {
-            let mut attrs = field.attrs.clone();
+            let mut attrs = input.attrs.iter().filter(|attr| attr.path().is_ident("serde")).cloned().collect::<Vec<_>>();
             serde_config::remove(&mut attrs, "default");
 
             let field_name = &field.ident;
