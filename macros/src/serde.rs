@@ -308,6 +308,10 @@ pub fn derive_struct_presence_aware_deserialize(
             std::fmt::Write::write_fmt(&mut buffer, format_args!("{},", bound.into_token_stream()))
                 .unwrap();
         }
+        for lifetime in input.generics.lifetimes() {
+            std::fmt::Write::write_fmt(&mut buffer, format_args!("'de: {},", lifetime.lifetime))
+                .unwrap();
+        }
         buffer
     };
 
@@ -756,6 +760,10 @@ pub fn derive_enum_presence_aware_deserialize(
         let mut buffer = String::new();
         for bound in bounds {
             std::fmt::Write::write_fmt(&mut buffer, format_args!("{},", bound.into_token_stream()))
+                .unwrap();
+        }
+        for lifetime in input.generics.lifetimes() {
+            std::fmt::Write::write_fmt(&mut buffer, format_args!("'de: {},", lifetime.lifetime))
                 .unwrap();
         }
         buffer
