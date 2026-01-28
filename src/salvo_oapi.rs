@@ -1,7 +1,7 @@
 #![cfg(feature = "salvo")]
 #![doc(hidden)]
 
-pub use std::option::Option as RenamedOption;
+pub type RenamedOption<T> = std::option::Option<T>;
 
 pub use salvo_oapi::*;
 
