@@ -109,7 +109,7 @@ pub fn impl_enum_debug_presence(
 
             Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => {
                 let bindings = (0..unnamed.len()).map(|i| format_ident!("f{}", i));
-                
+
                 let field_debugs = (0..unnamed.len()).map(|i| {
                     let ident = format_ident!("f{}", i);
                     quote! {

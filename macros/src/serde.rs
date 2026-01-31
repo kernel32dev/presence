@@ -828,7 +828,7 @@ pub fn derive_enum_presence_aware_deserialize(
     // the construction of the final enum from the deserialized proxy.
     let proxy_variant_destructuring = input.variants.iter().map(|variant| {
         let name = &variant.ident;
-        
+
         match &variant.fields {
             syn::Fields::Named(fields_named) => {
                 let destructured_fields = fields_named.named.iter().map(|field| &field.ident);
